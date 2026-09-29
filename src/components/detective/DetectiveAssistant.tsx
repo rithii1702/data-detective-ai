@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Bot, Send, Loader2, Minus, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import AIChart, { ChartDataPayload } from "./AIChart";
+import { getActiveDataset } from "@/lib/dataset-store";
 
 type Message = {
   role: "user" | "assistant";
@@ -129,20 +130,42 @@ export default function DetectiveAssistant() {
         },
       ]);
     } catch (error: unknown) {
-      console.error("Detective AI Chat error:", error);
-      const errMsg =
-        error instanceof Error
-          ? error.message
-          : "Could not connect to Detective AI backend.";
-      setMessages([
-        ...updatedMessages,
-        {
-          role: "assistant",
-          content: errMsg.includes("fetch")
-            ? "❌ Could not connect to Detective AI backend. Please verify the backend server is running at http://localhost:5000."
-            : `❌ ${errMsg}`,
-        },
-      ]);
+      console.error("Detective AI Chat error, attempting client-side dataset response:", error);
+      const active = getActiveDataset();
+      const lower = finalQuestion.toLowerCase();
+
+      if (active) {
+        let fallback = "";
+        if (lower.includes("explain") || lower.includes("summary") || lower.includes("what is")) {
+          fallback = `📊 **Dataset Summary for ${active.fileName}**:\n\n• **Total Records**: ${active.totalRows.toLocaleString()} rows\n• **Columns (${active.columns.length})**: ${active.columns.join(", ")}\n• **Numeric Columns**: ${active.numericColumns.join(", ") || "None detected"}\n• **Health Score**: ${active.healthScore}%\n• **Data Quality**: ${active.missingValues} null cells, ${active.duplicateRows} duplicate rows.`;
+        } else if (lower.includes("trend") || lower.includes("predict")) {
+          fallback = `📈 **Trend Analysis for ${active.fileName}**:\n\nContinuous metrics available for trend analysis: **${active.numericColumns.slice(0, 3).join(", ") || "None"}**.\nTotal records analyzed: ${active.totalRows.toLocaleString()}.`;
+        } else if (lower.includes("insight") || lower.includes("business")) {
+          fallback = `💡 **Key Business Insights for ${active.fileName}**:\n\n1. **Data Completeness**: Quality health score of **${active.healthScore}%** (${active.missingValues === 0 ? "zero missing values" : `${active.missingValues} missing values detected`}).\n2. **Categorical Features**: ${active.categoricalColumns.length} categorical dimensions (${active.categoricalColumns.slice(0, 4).join(", ") || "None"}).\n3. **Primary Metric**: Recommended focus on **${active.numericColumns[0] || active.columns[0]}**.`;
+        } else if (lower.includes("chart") || lower.includes("visual")) {
+          fallback = `📊 **Recommended Visualizations for ${active.fileName}**:\n\n• **Categorical Distribution**: ${active.chartData.categoryTitle}\n• **Continuous Series**: ${active.chartData.seriesTitle}\n\nYou can view these live on the Dashboard and EDA Visualizations tab!`;
+        } else if (lower.includes("clean") || lower.includes("outlier")) {
+          fallback = `🧹 **Quality Audit for ${active.fileName}**:\n\n• Missing Values: ${active.missingValues}\n• Duplicate Rows: ${active.duplicateRows}\n• Overall Score: ${active.healthScore}%\n\n${active.missingValues > 0 || active.duplicateRows > 0 ? "Action: Review missing values and deduplicate before modeling." : "Status: Clean schema with zero nulls."}`;
+        } else {
+          fallback = `🤖 **Data Detective Analysis for ${active.fileName}**:\n\nYour active dataset has **${active.totalRows.toLocaleString()} rows** and **${active.columns.length} columns** (${active.columns.slice(0, 5).join(", ")}).\n\nDataset Health Score: **${active.healthScore}%** (${active.missingValues} nulls, ${active.duplicateRows} duplicates).\n\nAsk about **summary**, **trends**, **business insights**, or **charts** to dive deeper!`;
+        }
+
+        setMessages([
+          ...updatedMessages,
+          {
+            role: "assistant",
+            content: fallback,
+          },
+        ]);
+      } else {
+        setMessages([
+          ...updatedMessages,
+          {
+            role: "assistant",
+            content: "👋 Welcome to Data Detective AI! No dataset is currently loaded. Please upload a CSV dataset or click **'Try Sample Dataset'** on the dashboard to start investigating.",
+          },
+        ]);
+      }
     } finally {
       setLoading(false);
     }

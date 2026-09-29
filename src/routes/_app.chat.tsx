@@ -71,6 +71,10 @@ const actions = [
   },
 ];
 
+import {
+  getActiveDataset,
+} from "@/lib/dataset-store";
+
 function ChatPage() {
   const [datasetInfo, setDatasetInfo] = useState({
     rows: 0,
@@ -81,6 +85,17 @@ function ChatPage() {
 
   // Load dataset information
   useEffect(() => {
+    const active = getActiveDataset();
+    if (active) {
+      setDatasetInfo({
+        rows: active.totalRows,
+        columns: active.columns.length,
+        missing: active.missingValues,
+        duplicates: active.duplicateRows,
+      });
+      return;
+    }
+
     fetch("http://localhost:5000/api/eda")
       .then((res) => res.json())
       .then((data) => {
