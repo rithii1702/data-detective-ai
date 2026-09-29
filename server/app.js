@@ -1,8 +1,14 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
+const fs = require("fs");
 const dotenv = require("dotenv");
 
-dotenv.config();
+const envPath = fs.existsSync(path.resolve(__dirname, ".env"))
+  ? path.resolve(__dirname, ".env")
+  : path.resolve(process.cwd(), "server/.env");
+dotenv.config({ path: envPath });
+console.log("Gemini API Key loaded:", !!process.env.GEMINI_API_KEY);
 
 const uploadRoutes = require("./routes/uploadRoutes");
 const explorerRoutes = require("./routes/explorerRoutes");

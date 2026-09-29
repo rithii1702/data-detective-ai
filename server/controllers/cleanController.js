@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const XLSX = require("xlsx");
 const csv = require("csv-parser");
 
 exports.cleanDataset = async (req, res) => {
@@ -8,15 +9,21 @@ exports.cleanDataset = async (req, res) => {
 
     const files = fs
       .readdirSync(uploadsPath)
-      .filter(file => file.endsWith(".csv"));
+      .filter(
+        (file) =>
+          file.endsWith(".csv") ||
+          file.endsWith(".xlsx") ||
+          file.endsWith(".xls")
+      );
 
     if (files.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "No uploaded dataset found."
+        message: "No uploaded dataset found.",
       });
     }
 
+    // Find latest uploaded file
     files.sort(
       (a, b) =>
         fs.statSync(path.join(uploadsPath, b)).mtimeMs -
@@ -24,49 +31,147 @@ exports.cleanDataset = async (req, res) => {
     );
 
     const latestFile = files[0];
+    const filePath = path.join(uploadsPath, latestFile);
 
-    const rows = [];
+    // --------------------------------
+    // READ DATASET
+    // --------------------------------
 
-    fs.createReadStream(path.join(uploadsPath, latestFile))
-      .pipe(csv())
-      .on("data", row => rows.push(row))
-      .on("end", () => {
+    let rows = [];
 
-        const originalRows = rows.length;
+    // CSV
+    if (latestFile.toLowerCase().endsWith(".csv")) {
+      rows = await new Promise((resolve, reject) => {
+        const data = [];
 
-        // Remove empty rows
-        const cleanedRows = rows.filter(row =>
-          Object.values(row).some(value => String(value).trim() !== "")
-        );
+        fs.createReadStream(filePath)
+          .pipe(csv())
+          .on("data", (row) => data.push(row))
+          .on("end", () => resolve(data))
+          .on("error", reject);
+      });
+    }
 
-        // Remove duplicate rows
-        const uniqueRows = [
-          ...new Map(
-            cleanedRows.map(item => [JSON.stringify(item), item])
-          ).values()
-        ];
-
-        res.json({
-          success: true,
-          fileName: latestFile,
-          originalRows,
-          cleanedRows: uniqueRows.length,
-          removedRows: originalRows - uniqueRows.length,
-          data: uniqueRows
-        });
-
-      })
-      .on("error", err => {
-        res.status(500).json({
-          success: false,
-          message: err.message
-        });
+    // Excel
+    else {
+      const workbook = XLSX.readFile(filePath, {
+        cellDates: true,
       });
 
+      const firstSheetName = workbook.SheetNames[0];
+
+      if (!firstSheetName) {
+        return res.status(400).json({
+          success: false,
+          message: "The uploaded file does not contain any sheets.",
+        });
+      }
+
+      const worksheet = workbook.Sheets[firstSheetName];
+
+      rows = XLSX.utils.sheet_to_json(worksheet, {
+        defval: "",
+        raw: false,
+      });
+    }
+
+    // --------------------------------
+    // ORIGINAL DATA
+    // --------------------------------
+
+    const originalRows = rows.length;
+
+    const columns =
+      rows.length > 0
+        ? Object.keys(rows[0])
+        : [];
+
+    // --------------------------------
+    // REMOVE COMPLETELY EMPTY ROWS
+    // --------------------------------
+
+    const nonEmptyRows = rows.filter((row) =>
+      Object.values(row).some(
+        (value) => String(value).trim() !== ""
+      )
+    );
+
+    const emptyRowsRemoved =
+      originalRows - nonEmptyRows.length;
+
+    // --------------------------------
+    // REMOVE DUPLICATE ROWS
+    // --------------------------------
+
+    const uniqueRows = [
+      ...new Map(
+        nonEmptyRows.map((row) => [
+          JSON.stringify(row),
+          row,
+        ])
+      ).values(),
+    ];
+
+    const duplicateRowsRemoved =
+      nonEmptyRows.length - uniqueRows.length;
+
+    // --------------------------------
+    // MISSING VALUES
+    // --------------------------------
+
+    const missingValues = {};
+
+    columns.forEach((column) => {
+      missingValues[column] = uniqueRows.filter(
+        (row) =>
+          row[column] === "" ||
+          row[column] === null ||
+          row[column] === undefined
+      ).length;
+    });
+
+    // --------------------------------
+    // TOTAL REMOVED
+    // --------------------------------
+
+    const removedRows =
+      originalRows - uniqueRows.length;
+
+    // --------------------------------
+    // RESPONSE
+    // --------------------------------
+
+    return res.status(200).json({
+      success: true,
+
+      fileName: latestFile,
+
+      originalRows,
+
+      cleanedRows: uniqueRows.length,
+
+      removedRows,
+
+      emptyRowsRemoved,
+
+      duplicateRowsRemoved,
+
+      totalColumns: columns.length,
+
+      columns,
+
+      missingValues,
+
+      data: uniqueRows,
+    });
+
   } catch (err) {
-    res.status(500).json({
+    console.error("CLEAN ERROR:", err);
+
+    return res.status(500).json({
       success: false,
-      message: err.message
+      message:
+        err.message || "Failed to clean dataset.",
     });
   }
 };

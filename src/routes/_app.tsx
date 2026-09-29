@@ -1,3 +1,4 @@
+import DetectiveAssistant from "@/components/detective/DetectiveAssistant";
 import { useEffect, useState } from "react";
 import { Link, Outlet, useRouterState, createFileRoute } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,7 +9,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_app")({
@@ -113,22 +113,19 @@ function AppLayout() {
         </nav>
 
         <div className="border-t border-border p-3">
-          <div className={cn("flex items-center gap-3 rounded-xl bg-sidebar-accent/60 p-2", collapsed && "justify-center")}>
-            <Avatar className="h-9 w-9 shrink-0">
-              <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">AM</AvatarFallback>
-            </Avatar>
-            {!collapsed && (
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium">Alex Morgan</div>
-                <div className="truncate text-xs text-muted-foreground">alex@detective.ai</div>
-              </div>
-            )}
-          </div>
           <button
             onClick={() => setCollapsed((c) => !c)}
-            className="mt-2 hidden w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs text-muted-foreground hover:text-foreground lg:flex"
+            className="hidden w-full items-center justify-center gap-2 rounded-xl py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground lg:flex"
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <><ChevronLeft className="h-4 w-4" /> Collapse</>}
+            {collapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <>
+                <ChevronLeft className="h-4 w-4" />
+                <span>Collapse</span>
+              </>
+            )}
           </button>
         </div>
       </aside>
@@ -160,9 +157,6 @@ function AppLayout() {
               <Bell className="h-5 w-5" />
               <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-danger" />
             </Button>
-            <Avatar className="h-9 w-9">
-              <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">AM</AvatarFallback>
-            </Avatar>
           </div>
         </header>
 
@@ -177,6 +171,7 @@ function AppLayout() {
             className="flex-1 p-4 md:p-8"
           >
             <Outlet />
+            <DetectiveAssistant />
           </motion.main>
         </AnimatePresence>
       </div>
