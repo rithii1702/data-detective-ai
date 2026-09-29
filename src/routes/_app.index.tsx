@@ -48,6 +48,7 @@ import {
   parseFileToDataset,
   type DatasetMetricSummary,
 } from "@/lib/dataset-store";
+import { getApiBaseUrl } from "@/lib/api-config";
 
 export const Route = createFileRoute("/_app/")({
   component: DashboardPage,
@@ -75,18 +76,17 @@ function DashboardPage() {
       if (active) {
         setDataset(active);
       } else {
-        // Try backend if local store is empty
-        fetch("http://localhost:5000/api/eda")
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.success && data.totalRows) {
-              // Convert backend eda to dataset summary if needed
-              // (keep local if already present)
-            }
-          })
-          .catch(() => {
-            // Ignore backend offline on static deploy
-          });
+        const apiUrl = getApiBaseUrl();
+        if (apiUrl) {
+          fetch(`${apiUrl}/api/eda`)
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.success && data.totalRows) {
+                // Convert backend eda to dataset summary if needed
+              }
+            })
+            .catch(() => {});
+        }
       }
     };
 
@@ -117,13 +117,15 @@ function DashboardPage() {
       setIsUploading(true);
       const parsed = await parseFileToDataset(file);
       setDataset(parsed);
-      // Optional backend upload
-      const formData = new FormData();
-      formData.append("dataset", file);
-      fetch("http://localhost:5000/api/upload", {
-        method: "POST",
-        body: formData,
-      }).catch(() => {});
+      const apiUrl = getApiBaseUrl();
+      if (apiUrl) {
+        const formData = new FormData();
+        formData.append("dataset", file);
+        fetch(`${apiUrl}/api/upload`, {
+          method: "POST",
+          body: formData,
+        }).catch(() => {});
+      }
     } catch (err) {
       console.error("Failed to parse file:", err);
     } finally {

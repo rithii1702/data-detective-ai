@@ -18,6 +18,9 @@ import {
   SectionCard,
 } from "@/components/detective/shared";
 
+import { getActiveDataset, clearActiveDataset } from "@/lib/dataset-store";
+import { getApiBaseUrl } from "@/lib/api-config";
+
 export const Route = createFileRoute("/_app/history")({
   component: HistoryPage,
   head: () => ({
@@ -44,19 +47,43 @@ function HistoryPage() {
 
   // Fetch analysis history
   useEffect(() => {
-    fetch("http://localhost:5000/api/history")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setHistory(data.history);
-        }
-      })
-      .catch((err) => {
-        console.error("History fetch error:", err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    const apiUrl = getApiBaseUrl();
+    if (apiUrl) {
+      fetch(`${apiUrl}/api/history`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.success && Array.isArray(data.history) && data.history.length > 0) {
+            setHistory(data.history);
+            return;
+          }
+          checkLocalStore();
+        })
+        .catch(() => {
+          checkLocalStore();
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      checkLocalStore();
+      setLoading(false);
+    }
+
+    function checkLocalStore() {
+      const active = getActiveDataset();
+      if (active) {
+        setHistory([
+          {
+            fileName: active.fileName,
+            uploadedAt: active.uploadedAt || new Date().toISOString(),
+            size: `${active.totalRows.toLocaleString()} rows (${active.columns.length} cols)`,
+            status: "Ready",
+          },
+        ]);
+      } else {
+        setHistory([]);
+      }
+    }
   }, []);
 
   // Delete dataset
@@ -67,37 +94,61 @@ function HistoryPage() {
 
     if (!confirmDelete) return;
 
+    const active = getActiveDataset();
+    if (active && active.fileName === fileName) {
+      clearActiveDataset();
+    }
+
     try {
-      const res = await fetch(
-        `http://localhost:5000/api/delete/${encodeURIComponent(fileName)}`,
-        {
-          method: "DELETE",
-        }
+      const apiUrl = getApiBaseUrl();
+      if (apiUrl) {
+        await fetch(
+          `${apiUrl}/api/delete/${encodeURIComponent(fileName)}`,
+          { method: "DELETE" }
+        ).catch(() => {});
+      }
+
+      setHistory((prev) =>
+        prev.filter((item) => item.fileName !== fileName)
       );
 
-      const data = await res.json();
-
-      if (data.success) {
-        setHistory((prev) =>
-          prev.filter((item) => item.fileName !== fileName)
-        );
-
-        alert("Dataset deleted successfully.");
-      } else {
-        alert(data.message || "Unable to delete dataset.");
-      }
+      alert("Dataset deleted successfully.");
     } catch (err) {
       console.error("Delete error:", err);
-      alert("Unable to delete dataset.");
+      setHistory((prev) =>
+        prev.filter((item) => item.fileName !== fileName)
+      );
     }
   };
 
   // Download dataset
   const downloadDataset = (fileName: string) => {
-    window.open(
-      `http://localhost:5000/api/download/${encodeURIComponent(fileName)}`,
-      "_blank"
-    );
+    const active = getActiveDataset();
+    if (active && active.fileName === fileName && active.data?.length > 0) {
+      // Direct CSV export
+      const headers = active.columns.join(",");
+      const rows = active.data.map((r: any) =>
+        active.columns.map((c: any) => `"${String(r[c] ?? "").replace(/"/g, '""')}"`).join(",")
+      );
+      const csvContent = [headers, ...rows].join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", fileName.endsWith(".csv") ? fileName : `${fileName}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+
+    const apiUrl = getApiBaseUrl();
+    if (apiUrl) {
+      window.open(
+        `${apiUrl}/api/download/${encodeURIComponent(fileName)}`,
+        "_blank"
+      );
+    }
   };
 
   // View dataset

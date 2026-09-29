@@ -4,7 +4,7 @@ import { Link, Outlet, useRouterState, createFileRoute } from "@tanstack/react-r
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Upload, Table2, Sparkles, BarChart3, Search, Lightbulb,
-  FileText, History, Users, Settings, Bell, Moon, Sun, ChevronLeft, ChevronRight,
+  FileText, History, Settings, Bell, Moon, Sun, ChevronLeft, ChevronRight,
   PanelLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,7 +26,6 @@ const nav: NavItem[] = [
   { label: "Insights", to: "/insights", icon: Lightbulb },
   { label: "Reports", to: "/reports", icon: FileText },
   { label: "History", to: "/history", icon: History },
-  { label: "Team", to: "/team", icon: Users },
   { label: "Settings", to: "/settings", icon: Settings },
 ];
 

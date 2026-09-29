@@ -21,6 +21,7 @@ import {
   getActiveDataset,
   loadSampleDataset,
 } from "@/lib/dataset-store";
+import { getApiBaseUrl } from "@/lib/api-config";
 
 export const Route = createFileRoute("/_app/eda")({
   component: EDAPage,
@@ -48,14 +49,17 @@ function EDAPage() {
     }
 
     // 2. Fallback to backend API
-    fetch("http://localhost:5000/api/eda")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.success) {
-          setEda(data);
-        }
-      })
-      .catch(() => {});
+    const apiUrl = getApiBaseUrl();
+    if (apiUrl) {
+      fetch(`${apiUrl}/api/eda`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.success) {
+            setEda(data);
+          }
+        })
+        .catch(() => {});
+    }
   }, []);
 
   const handleTrySample = () => {

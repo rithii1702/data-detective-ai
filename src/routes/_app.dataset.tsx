@@ -19,6 +19,7 @@ import {
   getActiveDataset,
   loadSampleDataset,
 } from "@/lib/dataset-store";
+import { getApiBaseUrl } from "@/lib/api-config";
 
 export const Route = createFileRoute("/_app/dataset")({
   component: DatasetPage,
@@ -68,17 +69,20 @@ function DatasetPage() {
     }
 
     // Try backend if local is empty
-    Promise.all([
-      fetch("http://localhost:5000/api/eda").then((r) => r.json()).catch(() => null),
-      fetch("http://localhost:5000/api/insights").then((r) => r.json()).catch(() => null),
-      fetch("http://localhost:5000/api/story").then((r) => r.json()).catch(() => null),
-    ]).then(([edaData, insightData, storyData]) => {
-      if (edaData?.success && insightData?.report && storyData?.story) {
-        setEda(edaData);
-        setReport(insightData.report);
-        setStory(storyData.story);
-      }
-    });
+    const apiUrl = getApiBaseUrl();
+    if (apiUrl) {
+      Promise.all([
+        fetch(`${apiUrl}/api/eda`).then((r) => r.json()).catch(() => null),
+        fetch(`${apiUrl}/api/insights`).then((r) => r.json()).catch(() => null),
+        fetch(`${apiUrl}/api/story`).then((r) => r.json()).catch(() => null),
+      ]).then(([edaData, insightData, storyData]) => {
+        if (edaData?.success && insightData?.report && storyData?.story) {
+          setEda(edaData);
+          setReport(insightData.report);
+          setStory(storyData.story);
+        }
+      });
+    }
   }, []);
 
   const handleTrySample = () => {

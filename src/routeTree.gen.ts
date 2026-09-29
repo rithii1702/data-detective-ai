@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppUploadRouteImport } from './routes/_app.upload'
-import { Route as AppTeamRouteImport } from './routes/_app.team'
 import { Route as AppStoryRouteImport } from './routes/_app.story'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppReportsRouteImport } from './routes/_app.reports'
@@ -37,11 +36,6 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppUploadRoute = AppUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppTeamRoute = AppTeamRouteImport.update({
-  id: '/team',
-  path: '/team',
   getParentRoute: () => AppRoute,
 } as any)
 const AppStoryRoute = AppStoryRouteImport.update({
@@ -113,7 +107,6 @@ export interface FileRoutesByFullPath {
   '/reports': typeof AppReportsRoute
   '/settings': typeof AppSettingsRoute
   '/story': typeof AppStoryRoute
-  '/team': typeof AppTeamRoute
   '/upload': typeof AppUploadRoute
 }
 export interface FileRoutesByTo {
@@ -128,7 +121,6 @@ export interface FileRoutesByTo {
   '/reports': typeof AppReportsRoute
   '/settings': typeof AppSettingsRoute
   '/story': typeof AppStoryRoute
-  '/team': typeof AppTeamRoute
   '/upload': typeof AppUploadRoute
   '/': typeof AppIndexRoute
 }
@@ -146,7 +138,6 @@ export interface FileRoutesById {
   '/_app/reports': typeof AppReportsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/story': typeof AppStoryRoute
-  '/_app/team': typeof AppTeamRoute
   '/_app/upload': typeof AppUploadRoute
   '/_app/': typeof AppIndexRoute
 }
@@ -165,7 +156,6 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/story'
-    | '/team'
     | '/upload'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -180,7 +170,6 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/story'
-    | '/team'
     | '/upload'
     | '/'
   id:
@@ -197,7 +186,6 @@ export interface FileRouteTypes {
     | '/_app/reports'
     | '/_app/settings'
     | '/_app/story'
-    | '/_app/team'
     | '/_app/upload'
     | '/_app/'
   fileRoutesById: FileRoutesById
@@ -227,13 +215,6 @@ declare module '@tanstack/react-router' {
       path: '/upload'
       fullPath: '/upload'
       preLoaderRoute: typeof AppUploadRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/team': {
-      id: '/_app/team'
-      path: '/team'
-      fullPath: '/team'
-      preLoaderRoute: typeof AppTeamRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/story': {
@@ -328,7 +309,6 @@ interface AppRouteChildren {
   AppReportsRoute: typeof AppReportsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppStoryRoute: typeof AppStoryRoute
-  AppTeamRoute: typeof AppTeamRoute
   AppUploadRoute: typeof AppUploadRoute
   AppIndexRoute: typeof AppIndexRoute
 }
@@ -345,7 +325,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppReportsRoute: AppReportsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppStoryRoute: AppStoryRoute,
-  AppTeamRoute: AppTeamRoute,
   AppUploadRoute: AppUploadRoute,
   AppIndexRoute: AppIndexRoute,
 }

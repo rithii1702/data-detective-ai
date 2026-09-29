@@ -8,6 +8,7 @@ import {
   loadSampleDataset,
   type DatasetMetricSummary,
 } from "@/lib/dataset-store";
+import { getApiBaseUrl } from "@/lib/api-config";
 
 export const Route = createFileRoute("/_app/explorer")({
   component: ExplorerPage,
@@ -40,14 +41,17 @@ function ExplorerPage() {
     }
 
     // 2. Fallback to backend API
-    fetch("http://localhost:5000/api/explorer")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.success) {
-          setDataset(data);
-        }
-      })
-      .catch(() => {});
+    const apiUrl = getApiBaseUrl();
+    if (apiUrl) {
+      fetch(`${apiUrl}/api/explorer`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.success) {
+            setDataset(data);
+          }
+        })
+        .catch(() => {});
+    }
   }, []);
 
   const handleTrySample = () => {

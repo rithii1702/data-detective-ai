@@ -74,6 +74,7 @@ const actions = [
 import {
   getActiveDataset,
 } from "@/lib/dataset-store";
+import { getApiBaseUrl } from "@/lib/api-config";
 
 function ChatPage() {
   const [datasetInfo, setDatasetInfo] = useState({
@@ -96,21 +97,22 @@ function ChatPage() {
       return;
     }
 
-    fetch("http://localhost:5000/api/eda")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setDatasetInfo({
-            rows: data.totalRows || data.rows || 0,
-            columns: data.columns?.length || 0,
-            missing: data.missingValues || 0,
-            duplicates: data.duplicateRows || 0,
-          });
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to load dataset information:", error);
-      });
+    const apiUrl = getApiBaseUrl();
+    if (apiUrl) {
+      fetch(`${apiUrl}/api/eda`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.success) {
+            setDatasetInfo({
+              rows: data.totalRows || data.rows || 0,
+              columns: data.columns?.length || 0,
+              missing: data.missingValues || 0,
+              duplicates: data.duplicateRows || 0,
+            });
+          }
+        })
+        .catch(() => {});
+    }
   }, []);
 
   const startInvestigation = (prompt: string) => {

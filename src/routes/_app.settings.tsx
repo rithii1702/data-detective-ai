@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { KeyRound, Copy } from "lucide-react";
+import { KeyRound, Copy, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,13 +20,15 @@ function SettingsPage() {
       <SectionCard title="Profile">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
           <Avatar className="h-20 w-20">
-            <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">AM</AvatarFallback>
+            <AvatarFallback className="bg-primary/10 text-primary text-xl font-semibold">
+              <User className="h-8 w-8" />
+            </AvatarFallback>
           </Avatar>
           <div className="grid flex-1 gap-4 sm:grid-cols-2">
-            <div><Label>Full name</Label><Input defaultValue="Alex Morgan" className="mt-1.5" /></div>
-            <div><Label>Email</Label><Input defaultValue="alex@detective.ai" className="mt-1.5" /></div>
-            <div><Label>Role</Label><Input defaultValue="Owner" className="mt-1.5" /></div>
-            <div><Label>Company</Label><Input defaultValue="Detective Labs Inc." className="mt-1.5" /></div>
+            <div><Label>Full name</Label><Input placeholder="Enter your full name" className="mt-1.5" /></div>
+            <div><Label>Email</Label><Input placeholder="name@example.com" type="email" className="mt-1.5" /></div>
+            <div><Label>Role</Label><Input placeholder="e.g. Data Analyst" className="mt-1.5" /></div>
+            <div><Label>Company</Label><Input placeholder="Company / Organization" className="mt-1.5" /></div>
           </div>
         </div>
       </SectionCard>

@@ -23,6 +23,7 @@ import {
   clearActiveDataset,
   type DatasetMetricSummary,
 } from "@/lib/dataset-store";
+import { getApiBaseUrl } from "@/lib/api-config";
 
 export const Route = createFileRoute("/_app/upload")({
   component: UploadPage,
@@ -51,12 +52,15 @@ function UploadPage() {
 
       // Attempt optional backend upload if server is active
       try {
-        const formData = new FormData();
-        formData.append("dataset", file);
-        await fetch("http://localhost:5000/api/upload", {
-          method: "POST",
-          body: formData,
-        });
+        const apiUrl = getApiBaseUrl();
+        if (apiUrl) {
+          const formData = new FormData();
+          formData.append("dataset", file);
+          await fetch(`${apiUrl}/api/upload`, {
+            method: "POST",
+            body: formData,
+          });
+        }
       } catch {
         // Silently pass if backend is offline on static deployment
       }
