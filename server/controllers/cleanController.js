@@ -7,6 +7,10 @@ exports.cleanDataset = async (req, res) => {
   try {
     const uploadsPath = path.join(__dirname, "../uploads");
 
+    if (!fs.existsSync(uploadsPath)) {
+      fs.mkdirSync(uploadsPath, { recursive: true });
+    }
+
     const files = fs
       .readdirSync(uploadsPath)
       .filter(
